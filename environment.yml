@@ -1,0 +1,30 @@
+name: "base"
+channels:
+  - conda-forge
+dependencies:
+  - conda-forge::gdal
+  - conda-forge::git
+  - pip
+  - pip:
+    - click
+    - cdsapi>=0.7.0
+    - dask
+    - datetime
+    - fsspec
+    - gcsfs
+    - joblib
+    - loguru
+    - munch
+    - netcdf4
+    - pandas
+    - planetary-computer
+    - pqdm
+    - pystac-client
+    - python-dotenv
+    - pyyaml
+    - rasterio
+    - rioxarray
+    - s3fs
+    - scipy
+    - stackstac
+    - xarray
