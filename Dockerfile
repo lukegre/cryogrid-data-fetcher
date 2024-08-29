@@ -20,7 +20,9 @@ RUN chmod +rwx /entrypoint.sh
 
 USER mambauser
 WORKDIR /myhome/cryogrid/
+
+ENV REPONAME="cryogrid-era5-downloader"
 SHELL ["micromamba", "run", "-n", "base", "/bin/bash", "-c"]
-RUN git clone https://github.com/lukegre/cryogrid-era5-downloader.git 
+RUN git clone https://github.com/lukegre/${REPONAME}.git
 
 ENTRYPOINT ["/entrypoint.sh"]

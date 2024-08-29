@@ -26,10 +26,10 @@ RUNAI_JOBNAME=runai-${RUNAI_PROJECT}-${DOCKER_NAME}-${DOCKER_TAG}
 
 
 build:  ## Docker: build the docker image from ./Dockerfile
-	@docker build --platform=${DOCKER_PLATFORM} -t ${DOCKER_IMAGE} .
+	docker build --platform=${DOCKER_PLATFORM} -t ${DOCKER_IMAGE} .
 
 run:  ## Docker: run the docker container from ./Dockerfile
-	@docker run \
+	docker run \
 		--rm \
 		--interactive \
 		--tty \
@@ -39,18 +39,17 @@ run:  ## Docker: run the docker container from ./Dockerfile
 
 push:  ## Docker: push the docker image to dockerhub
 	@echo "Pushing ${DOCKER_IMAGE} to dockerhub: https://hub.docker.com/repository/docker/${DOCKER_IMAGE}/"
-	@docker push ${DOCKER_IMAGE}
+	docker push ${DOCKER_IMAGE}
 
 runai-login:  ## RunAI: login to runai
 	@runai login
 
 runai-submit:  ## RunAI: submit the job to runai - also mounts the s3 bucket
-	@runai submit ${RUNAI_JOBNAME} \
+	runai submit ${RUNAI_JOBNAME} \
 		--cpu ${CPUS} \
 		--memory ${RAM} \
 		-i ${DOCKER_IMAGE} \
 		--interactive
-	@rm -f .ssh-id-copied
 
 runai-status:  ## RunAI: get the status of the job
 	runai describe job ${RUNAI_JOBNAME} -p ${RUNAI_PROJECT}

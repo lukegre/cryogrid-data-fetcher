@@ -33,15 +33,28 @@ def load_config_yaml(fname_yaml)->_munch.Munch:
 
     check_era5_vars(config)
     check_s3_paths(config)
-
-    dotenv_fname = dotenv.find_dotenv(raise_error_if_not_found=True)
-    logger.success(f".env file found: {dotenv_fname}")
-
-    dotenv.load_dotenv(dotenv_fname, verbose=True)
-
     logger.success(f"Loaded request from {fname_yaml}")
 
+    load_dotenv(config.fname_dotenv)
+
+
     return config
+
+
+def load_dotenv(path_to_dotenv: str):
+    import dotenv
+
+    fname_dotenv = dotenv.find_dotenv()
+    found = dotenv.load_dotenv(dotenv_path=fname_dotenv)
+    if not found:
+        fname_dotenv = path_to_dotenv
+        found = dotenv.load_dotenv(fname_dotenv)
+    
+    if found:
+        env_vars = ", ".join(dotenv.dotenv_values(fname_dotenv))
+        logger.success(f"Loaded .env variables: {env_vars}")
+    else:
+        raise FileNotFoundError("No .env file found")
 
 
 def make_template(filename_out:str, schema_fname=_SCHEMA_PATH):
