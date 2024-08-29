@@ -17,7 +17,7 @@ def download_era5_from_cds(request_config: dict, dry_run=False):
 
     requests = make_cds_requests_list(request_config)
     
-    n_jobs = request_config['era5']['n_parallel_requests']
+    n_jobs = request_config['era5']['n_jobs']
     
     kwargs = dict(
         s3_dst_dir=request_config['era5']['dst_dir_s3'],

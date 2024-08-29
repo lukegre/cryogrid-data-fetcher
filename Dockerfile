@@ -17,6 +17,6 @@ COPY entrypoint.sh /entrypoint.sh
 RUN chmod +rwx /entrypoint.sh
 
 USER mambauser
-COPY .. /myhome/pamir/era5-downloader/
+COPY .. /myhome/cryogrid/era5-downloader/
 
 ENTRYPOINT ["/entrypoint.sh"]

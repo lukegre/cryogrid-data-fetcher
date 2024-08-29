@@ -4,13 +4,13 @@ description: >
   Pamirs (Tajikistan) and Western Tian Shan (Kyrgyzstan) region 
   for a CryoGrid TopoSub run. The goal is to run at a 30 m resolution. 
 fpath_base_s3: 's3://spi-pamir-cryogrid/{project}'
-fname_dotenv: '/myhome/pamir/.env'  # where the .env file with s3 credentials is located on RunAI
+fname_dotenv: '~/cryogrid/.env'  # where the .env file with s3 credentials is located on RunAI
 
 
 # specify bounding box for the region - will raise error if too large
 bbox_WSEN: [70.0, 37.0, 75.0, 41.0]  # [lon_min, lat_min, lon_max, lat_max]
-start_year: 2015  # only applies to ERA5 data
-end_year: 2024    # includes this year
+start_year: 2020  # only applies to ERA5 data
+end_year: 2020    # includes this year
 
 
 dem:
@@ -30,7 +30,7 @@ era5:  # standard variables for a CryoGrid TopoSub run - should not have to chan
   dst_dir_s3: '{fpath_base_s3}/era5/raw'     # path on S3 bucket
   fname_local: /tmp/{fname}                   # path on local directory
   remove_local_files_after_s3_upload: false   # remove local files after uploading to S3
-  n_parallel_requests: 16                     # number of parallel requests
+  n_jobs: 16                     # number of parallel requests
 
   single_levels:                                    
     dataset: reanalysis-era5-single-levels

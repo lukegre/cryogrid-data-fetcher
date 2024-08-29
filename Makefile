@@ -1,6 +1,7 @@
 # default variables
-DOCKER_NAME ?= era5-downloader
 DOCKER_TAG ?= latest
+DOCKER_NAME ?= era5-downloader
+DOCKER_ENTRYPOINT ?= bash
 
 CPUS ?= 2
 RAM ?= 12G
@@ -32,7 +33,8 @@ run:  ## Docker: run the docker container from ./Dockerfile
 		--rm \
 		--interactive \
 		--tty \
-		${DOCKER_IMAGE} $(ARGS)
+		--entrypoint ${DOCKER_ENTRYPOINT} \
+		${DOCKER_IMAGE} $(DOCKER_RUN_CMD)
 
 bash:  ## Docker: run the docker container from ./Dockerfile with bash
 	@docker run --rm -it --entrypoint /bin/bash ${DOCKER_IMAGE}
@@ -81,10 +83,11 @@ ssh:  ssh-copy  ## ssh into a localhost ssh server
 help:  ## show this help
 	@echo ENVIRONMENT VARIABLES
 	@echo ========================
-	@echo "DOCKER_IMAGE     ${DOCKER_IMAGE}"
-	@echo "DOCKER_PLATFORM  ${DOCKER_PLATFORM}"
-	@echo "RUNAI_PROJECT    ${RUNAI_PROJECT}"
-	@echo "RUNAI_JOBNAME    ${RUNAI_JOBNAME}"
+	@echo "DOCKER_IMAGE       ${DOCKER_IMAGE}"
+	@echo "DOCKER_PLATFORM    ${DOCKER_PLATFORM}"
+	@echo "DOCKER_ENTRYPOINT  ${DOCKER_ENTRYPOINT}"
+	@echo "RUNAI_PROJECT      ${RUNAI_PROJECT}"
+	@echo "RUNAI_JOBNAME      ${RUNAI_JOBNAME}"
 	@echo ========================
 	@echo
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'

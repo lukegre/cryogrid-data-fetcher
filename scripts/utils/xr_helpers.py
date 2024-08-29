@@ -5,15 +5,18 @@ from .. import logger
 from ..utils.s3_helpers import is_safe_s3_path
 
 
-def register_dask_progressbar_based_on_logger(log_level_thresh=10):
+def register_dask_progressbar_based_on_logger(log_level_thresh=20):
     from dask.diagnostics import ProgressBar
 
     handlers = logger._core.handlers.values()
     log_levels = [hdl.levelno for hdl in handlers]
     log_level = min(log_levels)
     
-    if log_level <= log_level_thresh:
-        ProgressBar().register()
+    if log_level <= log_level_thresh:    
+        from tqdm.dask import TqdmCallback
+
+        cb = TqdmCallback(desc="global")
+        cb.register()
 
 
 @xr.register_dataset_accessor("s3")

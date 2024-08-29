@@ -1,5 +1,11 @@
 import munch as _munch
-from . import logger
+import pathlib as _pathlib
+
+from .. import logger
+
+
+_PWD = _pathlib.Path(__file__).parent
+_SCHEMA_PATH = _PWD / "schema.yaml"
 
 
 def load_config_yaml(fname_yaml)->_munch.Munch:
@@ -10,7 +16,10 @@ def load_config_yaml(fname_yaml)->_munch.Munch:
     import yaml
     import pathlib 
     import dotenv
-    from .utils.dict_helpers import resolve_format_strings
+    from ..utils.dict_helpers import resolve_format_strings
+    from ..utils.yml_helpers import validate_yaml_file
+
+    validate_yaml_file(fname_yaml, filename_schema=_SCHEMA_PATH)
     
     with open(fname_yaml, 'r') as f:
         request = yaml.safe_load(f)
@@ -32,6 +41,13 @@ def load_config_yaml(fname_yaml)->_munch.Munch:
     return request
 
 
+def make_template(filename_out:str, schema_fname=_SCHEMA_PATH):
+    from ..utils.yml_helpers import make_template_from_schema
+
+    make_template_from_schema(schema_fname, filename_out)
+    logger.success(f"Config template written to {filename_out}")
+
+
 def check_era5_vars(request):
     """
     Check if the request dictionary has the required keys for CryoGrid runs
@@ -41,7 +57,7 @@ def check_era5_vars(request):
 
 
 def check_s3_paths(request):
-    from .utils.s3_helpers import is_safe_s3_path
+    from ..utils.s3_helpers import is_safe_s3_path
 
     is_safe_s3_path(request['fpath_base_s3'])
     is_safe_s3_path(request['dem']['fpath_s3'])

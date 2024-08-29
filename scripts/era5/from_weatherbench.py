@@ -48,7 +48,7 @@ def download_era5_weatherbench_batch(data_config, t0, t1):
     
     urls = make_weatherbench_era5_url_list(data_config, t0, t1)
     subset_netcdf = make_gc_netcdf_subsetter(data_config)
-    n_jobs = data_config['era5']['n_parallel_requests']
+    n_jobs = data_config['era5']['n_jobs']
     
     results = pqdm(urls, subset_netcdf, n_jobs=n_jobs, exception_behaviour='immediate')
     ds = xr.merge(results)

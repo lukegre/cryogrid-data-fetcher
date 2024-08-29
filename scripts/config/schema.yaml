@@ -1,0 +1,53 @@
+#! This is a schema of what your configuration file should look like and will be used for validation.
+#! The schema can also be used to create a template file. The lines starting with #! are only schema 
+#! comments and will not be used to create the template. If an inline comment and contains (e.g. <value>), 
+#! then <value> will be used as the default value in the template. The comment preceding the (e.g. ...)
+#! will be preserved in the template file.
+##### INTRODUCTION ######################################################
+# This is a configuration file to define your CryoGrid project and the 
+# data that will be used. Primarily, it is used to download ERA5 data. 
+
+##### NOTE ON {PLACEHOLDERS} ############################################
+# you can have {placeholders} for string entries that will be replaced by 
+# the values in the configuration file if they are in the same block or 
+# higher up in the hierarchy
+
+# Description: Schema for the configuration file
+project: str(required=True, max=20)  # a short name for the project
+description: str(required=True, min=80)  # a longer description of the project
+fpath_base_s3: str(required=True, starts_with='s3://')  # the data will be stored on an S3 bucket (e.g. s3://bucket-name/{project})
+fname_dotenv: str(required=True, ends_with='.env')  # path to the .env file with S3 credentials (e.g. ~/cryogrid/.env)
+
+# Bounding box list with four num elements [lon_min, lat_min, lon_max, lat_max]
+bbox_WSEN: list(num(min=-180, max=180), min=4, max=4, required=True)  # west, south, east, north (e.g. [70.0, 37.0, 75.0, 41.0])
+
+# Year fields for the ERA5 data
+start_year: int(min=1940, max=2100, required=True)  # includes this year (e.g. 2015)
+end_year: int(min=1940, max=2100, required=True)  # includes this year (e.g. 2024)
+
+# DEM data that conctains elevation - note that is currently only taylored for cop-dem-glo-30
+dem: 
+  stac_catalog_url: str(required=True, starts_with='https://')  # URL to the STAC catalog (e.g. https://planetarycomputer.microsoft.com/api/stac/v1)
+  stac_collection: str(required=True)  # STAC collection name (e.g. cop-dem-glo-30)
+  fname: str(required=True, ends_with='.zarr')  # Zarr file name (e.g. DEM-{stac_collection}-{bbox_str}.zarr)
+  fpath_s3: str(required=True)  # S3 path to store the DEM data (e.g. {fpath_base_s3}/dem/{fname})
+  fpath_local: str(required=True)  # Local path to store the DEM data (e.g. ../data/{fname})
+  epsg: int(required=True, min=1000, max=99999)  # EPSG code for the projection (e.g. 32643)
+  resolution: int(required=True)  # Resolution of the DEM data (e.g. 30)
+
+# ERA5 data request must contain standard variables for a CryoGrid TopoSub run - these are checked when config is loaded
+era5:  # downloaded from the Google weatherbench dataset
+  fname: str(required=True, ends_with='.nc')  # File name for the ERA5 data (e.g. ERA5-CryoGrid_sub-{bbox_str}-{t0_year}{t0_month}.nc)
+  dst_dir_s3: str(required=True)  # S3 path to store the ERA5 data (e.g. {fpath_base_s3}/era5/raw)
+  fname_local: str(required=True)  # Local path to store the ERA5 data (e.g. /tmp/{fname})
+  remove_local_files_after_s3_upload: bool(required=True)  # Remove local files after uploading to S3 (e.g. true)
+  n_jobs: int(min=1, required=True, max=16)  # Number of parallel requests (e.g. 16)
+    
+  single_levels:
+    dataset: str(required=True, ends_with='single-levels')  # Dataset name (e.g. reanalysis-era5-single-levels)
+    variable: list(str())  # List of variables (e.g. ['surface_solar_radiation_downwards', 'surface_thermal_radiation_downwards', ...])
+
+  pressure_levels:
+    dataset: str(required=True, ends_with='pressure-levels')  # Dataset name (e.g. reanalysis-era5-pressure-levels)
+    pressure_level: list(str(matches='[0-9]{1,4}'), min=1)  # levels in hPa (e.g. ['700', '750', '800', '850', '900', '950', '1000'])
+    variable: list(str())  # List of variables (e.g. ['geopotential', 'specific_humidity', ...])

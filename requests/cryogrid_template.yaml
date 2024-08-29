@@ -1,0 +1,48 @@
+##### INTRODUCTION ######################################################
+# This is a configuration file to define your CryoGrid project and the 
+# data that will be used. Primarily, it is used to download ERA5 data. 
+
+##### NOTE ON {PLACEHOLDERS} ############################################
+# you can have {placeholders} for string entries that will be replaced by 
+# the values in the configuration file if they are in the same block or 
+# higher up in the hierarchy
+
+# Description: Schema for the configuration file
+project:  # a short name for the project
+description:   # a longer description of the project
+fpath_base_s3: 's3://bucket-name/{project}'  # the data will be stored on an S3 bucket
+fname_dotenv: '~/cryogrid/.env'  # path to the .env file with S3 credentials
+
+# Bounding box list with four num elements [lon_min, lat_min, lon_max, lat_max]
+bbox_WSEN: [70.0, 37.0, 75.0, 41.0]  # west, south, east, north
+
+# Year fields for the ERA5 data
+start_year: 2015  # includes this year
+end_year: 2024  # includes this year
+
+# DEM data that conctains elevation - note that is currently only taylored for cop-dem-glo-30
+dem:   
+  stac_catalog_url: https://planetarycomputer.microsoft.com/api/stac/v1  # URL to the STAC catalog
+  stac_collection: cop-dem-glo-30  # STAC collection name
+  fname: 'DEM-{stac_collection}-{bbox_str}.zarr'  # Zarr file name
+  fpath_s3: '{fpath_base_s3}/dem/{fname}'  # S3 path to store the DEM data
+  fpath_local: '../data/{fname}'  # Local path to store the DEM data
+  epsg: 32643  # EPSG code for the projection
+  resolution: 30  # Resolution of the DEM data
+
+# ERA5 data request must contain standard variables for a CryoGrid TopoSub run - these are checked when config is loaded
+era5:   
+  fname: 'ERA5-CryoGrid_sub-{bbox_str}-{t0_year}{t0_month}.nc'  # File name for the ERA5 data
+  dst_dir_s3: '{fpath_base_s3}/era5/raw'  # S3 path to store the ERA5 data
+  fname_local: '/tmp/{fname}'  # Local path to store the ERA5 data
+  remove_local_files_after_s3_upload: true  # Remove local files after uploading to S3
+  n_jobs: 16  # Number of parallel requests
+    
+  single_levels:   
+    dataset: reanalysis-era5-single-levels  # Dataset name
+    variable: ['surface_solar_radiation_downwards', 'surface_thermal_radiation_downwards', ...]  # List of variables
+
+  pressure_levels:   
+    dataset: reanalysis-era5-pressure-levels  # Dataset name
+    pressure_level: ['700', '750', '800', '850', '900', '950', '1000']  # levels in hPa
+    variable: ['geopotential', 'specific_humidity', ...]  # List of variables

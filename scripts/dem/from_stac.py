@@ -21,7 +21,6 @@ def main(config: dict)->_xr.Dataset:
 
 
 def download_dem_to_s3(config: dict)->None:
-    from dask.diagnostics import ProgressBar
     
     dem = get_stac_data(config)
     
@@ -29,8 +28,7 @@ def download_dem_to_s3(config: dict)->None:
     mapper = fs.get_mapper(config.dem.fpath_s3)
     logger.info(f"Writing DEM data to {config.dem.fpath_s3}")
 
-    with ProgressBar():
-        dem.to_zarr(mapper, mode='w')
+    dem.to_zarr(mapper, mode='w')
 
     logger.success(f"DEM data written to {config.dem.fpath_s3}")
 
