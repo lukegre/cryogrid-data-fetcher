@@ -11,5 +11,6 @@
 
 # other
 **/.DS_Store
+**/*.bak
 
 # exceptions

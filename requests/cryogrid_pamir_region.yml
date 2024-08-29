@@ -9,8 +9,8 @@ fname_dotenv: '/myhome/cryogrid/.env'  # where the .env file with s3 credentials
 
 # specify bounding box for the region - will raise error if too large
 bbox_WSEN: [70.0, 37.0, 75.0, 41.0]  # [lon_min, lat_min, lon_max, lat_max]
-start_year: 2020  # only applies to ERA5 data
-end_year: 2020    # includes this year
+start_year: 2017  # only applies to ERA5 data
+end_year: 2024    # includes this year
 
 
 dem:
