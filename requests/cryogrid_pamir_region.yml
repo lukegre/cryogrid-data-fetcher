@@ -4,7 +4,7 @@ description: >
   Pamirs (Tajikistan) and Western Tian Shan (Kyrgyzstan) region 
   for a CryoGrid TopoSub run. The goal is to run at a 30 m resolution. 
 fpath_base_s3: 's3://spi-pamir-cryogrid/{project}'
-fname_dotenv: '~/cryogrid/.env'  # where the .env file with s3 credentials is located on RunAI
+fname_dotenv: '/myhome/cryogrid/.env'  # where the .env file with s3 credentials is located on RunAI
 
 
 # specify bounding box for the region - will raise error if too large

@@ -19,10 +19,10 @@ COPY entrypoint.sh /entrypoint.sh
 RUN chmod +rwx /entrypoint.sh
 
 USER mambauser
-WORKDIR /myhome/cryogrid/
+WORKDIR /home/mambauser/
 
 ENV REPONAME="cryogrid-era5-downloader"
 SHELL ["micromamba", "run", "-n", "base", "/bin/bash", "-c"]
-RUN git clone https://github.com/lukegre/${REPONAME}.git
+RUN git clone https://github.com/lukegre/${REPONAME}.git /home/mambauser/${REPONAME}
 
 ENTRYPOINT ["/entrypoint.sh"]

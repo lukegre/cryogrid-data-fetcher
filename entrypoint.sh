@@ -1,5 +1,8 @@
 #!/bin/bash
 
+ls -laF /myhome/cryogrid/
+echo ===========
+ls -laF /home/mambauser/
 /opt/conda/bin/python \
-    /myhome/cryogrid/cryogrid-era5-downloader/cli.py \
-    /myhome/cryogrid/cryogrid-era5-downloader/requests/cryogrid_pamir_region.yml
+    /home/mambauser/cryogrid-era5-downloader/cli.py \
+    /home/mambauser/cryogrid-era5-downloader/requests/cryogrid_pamir_region.yml

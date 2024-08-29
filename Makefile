@@ -29,7 +29,7 @@ build:  ## Docker: build the docker image from ./Dockerfile
 	docker build --platform=${DOCKER_PLATFORM} -t ${DOCKER_IMAGE} .
 
 run:  ## Docker: run the docker container from ./Dockerfile
-	docker run \
+	@docker run \
 		--rm \
 		--interactive \
 		--tty \
@@ -45,19 +45,28 @@ runai-login:  ## RunAI: login to runai
 	@runai login
 
 runai-submit:  ## RunAI: submit the job to runai - also mounts the s3 bucket
-	runai submit ${RUNAI_JOBNAME} \
+	@runai submit ${RUNAI_JOBNAME} \
 		--cpu ${CPUS} \
 		--memory ${RAM} \
 		-i ${DOCKER_IMAGE} \
 		--interactive
 
 runai-status:  ## RunAI: get the status of the job
-	runai describe job ${RUNAI_JOBNAME} -p ${RUNAI_PROJECT}
+	@runai describe job ${RUNAI_JOBNAME} -p ${RUNAI_PROJECT}
+
+runai-logs:  ## RunAI: get the logs of the job
+	@runai logs ${RUNAI_JOBNAME} -p ${RUNAI_PROJECT}
+
+runai-delete:  ## RunAI: delete the job
+	@runai delete job ${RUNAI_JOBNAME} -p ${RUNAI_PROJECT}
 
 HELP:  # show this help
 	@echo ENVIRONMENT VARIABLES
 	@echo ========================
-	@echo "DOCKER_IMAGE       ${DOCKER_IMAGE}"
+	@echo "DOCKER_IMAGE	   ${DOCKER_IMAGE}"
+	@echo "DOCKER_USER        ${DOCKER_USER}"
+	@echo "DOCKER_NAME        ${DOCKER_NAME}"
+	@echo "DOCKER_TAG         ${DOCKER_TAG}"
 	@echo "DOCKER_PLATFORM    ${DOCKER_PLATFORM}"
 	@echo "DOCKER_ENTRYPOINT  ${DOCKER_ENTRYPOINT}"
 	@echo ------------------------
