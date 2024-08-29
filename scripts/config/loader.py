@@ -22,23 +22,26 @@ def load_config_yaml(fname_yaml)->_munch.Munch:
     validate_yaml_file(fname_yaml, filename_schema=_SCHEMA_PATH)
     
     with open(fname_yaml, 'r') as f:
-        request = yaml.safe_load(f)
+        config = yaml.safe_load(f)
 
-    request['fname_yaml'] = pathlib.Path(fname_yaml).resolve()
-    request['bbox_str'] = make_bbox_str(request['bbox_WSEN'])
+    config['fname_yaml'] = pathlib.Path(fname_yaml).resolve()
+    config['bbox_str'] = make_bbox_str(config['bbox_WSEN'])
 
     # resolve format strings
-    request = resolve_format_strings(request)
-    request = _munch.munchify(request)
+    config = resolve_format_strings(config)
+    config = _munch.munchify(config)
 
-    check_era5_vars(request)
-    check_s3_paths(request)
+    check_era5_vars(config)
+    check_s3_paths(config)
 
-    dotenv.load_dotenv(dotenv_path=request['fname_dotenv'], verbose=True)
+    dotenv_fname = dotenv.find_dotenv(raise_error_if_not_found=True)
+    logger.success(f".env file found: {dotenv_fname}")
+
+    dotenv.load_dotenv(dotenv_fname, verbose=True)
 
     logger.success(f"Loaded request from {fname_yaml}")
 
-    return request
+    return config
 
 
 def make_template(filename_out:str, schema_fname=_SCHEMA_PATH):

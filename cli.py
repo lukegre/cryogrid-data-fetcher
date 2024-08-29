@@ -13,10 +13,12 @@ def get_era5_data(fname_config, dry_run):
     from scripts.config.loader import load_config_yaml
     import dotenv
 
+    config = load_config_yaml(fname_config)
+
+    dotenv.find_dotenv(raise_error_if_not_found=True)
     dotenv.load_dotenv(verbose=True)
 
-    request_dict = load_config_yaml(fname_config)
-    download_era5_from_weatherbench(request_dict)
+    download_era5_from_weatherbench(config)
 
 
 if __name__ == "__main__":

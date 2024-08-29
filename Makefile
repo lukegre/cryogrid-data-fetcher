@@ -21,8 +21,8 @@ DOCKER_IMAGE=${DOCKER_USER}/${DOCKER_NAME}:${DOCKER_TAG}
 RUNAI_JOBNAME=runai-${RUNAI_PROJECT}-${DOCKER_NAME}-${DOCKER_TAG}
 
 # some makefile magic commands
-.DEFAULT_GOAL := help
-.PHONY: help
+.DEFAULT_GOAL := HELP
+.PHONY: HELP
 
 
 build:  ## Docker: build the docker image from ./Dockerfile
@@ -33,20 +33,18 @@ run:  ## Docker: run the docker container from ./Dockerfile
 		--rm \
 		--interactive \
 		--tty \
+		--volume ./.env:/myhome/cryogrid/.env \
 		--entrypoint ${DOCKER_ENTRYPOINT} \
 		${DOCKER_IMAGE} $(DOCKER_RUN_CMD)
-
-bash:  ## Docker: run the docker container from ./Dockerfile with bash
-	@docker run --rm -it --entrypoint /bin/bash ${DOCKER_IMAGE}
 
 push:  ## Docker: push the docker image to dockerhub
 	@echo "Pushing ${DOCKER_IMAGE} to dockerhub: https://hub.docker.com/repository/docker/${DOCKER_IMAGE}/"
 	@docker push ${DOCKER_IMAGE}
 
-login:  ## RunAI: login to runai
+runai-login:  ## RunAI: login to runai
 	@runai login
 
-submit:  ## RunAI: submit the job to runai - also mounts the s3 bucket
+runai-submit:  ## RunAI: submit the job to runai - also mounts the s3 bucket
 	@runai submit ${RUNAI_JOBNAME} \
 		--cpu ${CPUS} \
 		--memory ${RAM} \
@@ -54,38 +52,16 @@ submit:  ## RunAI: submit the job to runai - also mounts the s3 bucket
 		--interactive
 	@rm -f .ssh-id-copied
 
-ports:  ## RunAI: expose the ports of the job
-	@if [ -f .port-forward.pid ] && kill -0 $$(cat .port-forward.pid) 2>/dev/null; then \
-		echo "Port forwarding is already running with PID $$(cat .port-forward.pid)"; \
-	else \
-		echo Forwarding ports; \
-		nohup runai port-forward ${JOBNAME} --port ${PORT_LOCAL_SSH}:${PORT_VM_SSH} --port ${PORT_LOCAL_NB}:${PORT_VM_NB} > /dev/null 2>&1 & echo "$$!" > .port-forward.pid; \
-		sleep 2; \
-	fi
-	@echo "   SSH:      ${PORT_LOCAL_SSH}"
-	@echo "   Notebook: ${PORT_LOCAL_NB}"
-
-status:  # RunAI: get the status of the job
+runai-status:  ## RunAI: get the status of the job
 	runai describe job ${RUNAI_JOBNAME} -p ${RUNAI_PROJECT}
 
-ssh-copy:  ports  ## copy the ssh key to localhost
-	@if [ -f .ssh-id-copied ]; then \
-			echo "SSH key already copied"; \
-	else \
-	 	echo "Attempting to copy ssh-key to localhost (password='password')"; \
-		ssh-copy-id -i ~/.ssh/id_rsa.pub -p ${PORT_LOCAL_SSH} ${USER}@localhost; \
-		echo "" > ".ssh-id-copied"; \
-	fi
-
-ssh:  ssh-copy  ## ssh into a localhost ssh server
-	@ssh ${USER}@localhost -p ${PORT_LOCAL_SSH}
-
-help:  ## show this help
+HELP:  # show this help
 	@echo ENVIRONMENT VARIABLES
 	@echo ========================
 	@echo "DOCKER_IMAGE       ${DOCKER_IMAGE}"
 	@echo "DOCKER_PLATFORM    ${DOCKER_PLATFORM}"
 	@echo "DOCKER_ENTRYPOINT  ${DOCKER_ENTRYPOINT}"
+	@echo ------------------------
 	@echo "RUNAI_PROJECT      ${RUNAI_PROJECT}"
 	@echo "RUNAI_JOBNAME      ${RUNAI_JOBNAME}"
 	@echo ========================
