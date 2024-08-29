@@ -2,6 +2,7 @@
 DOCKER_TAG ?= latest
 DOCKER_NAME ?= era5-downloader
 DOCKER_ENTRYPOINT ?= bash
+DOCKER_BUILD_FLAGS ?= 
 
 CPUS ?= 2
 RAM ?= 12G
@@ -26,7 +27,7 @@ RUNAI_JOBNAME=runai-${RUNAI_PROJECT}-${DOCKER_NAME}-${DOCKER_TAG}
 
 
 build:  ## Docker: build the docker image from ./Dockerfile
-	docker build --platform=${DOCKER_PLATFORM} -t ${DOCKER_IMAGE} .
+	docker build ${DOCKER_BUILD_FLAGS} --platform=${DOCKER_PLATFORM} -t ${DOCKER_IMAGE} .
 
 run:  ## Docker: run the docker container from ./Dockerfile
 	@docker run \
@@ -60,15 +61,19 @@ runai-logs:  ## RunAI: get the logs of the job
 runai-delete:  ## RunAI: delete the job
 	@runai delete job ${RUNAI_JOBNAME} -p ${RUNAI_PROJECT}
 
+logs:  runai-logs # hidden alias
+status: runai-status # hidden alias
+
 HELP:  # show this help
 	@echo ENVIRONMENT VARIABLES
 	@echo ========================
-	@echo "DOCKER_IMAGE	   ${DOCKER_IMAGE}"
-	@echo "DOCKER_USER        ${DOCKER_USER}"
-	@echo "DOCKER_NAME        ${DOCKER_NAME}"
-	@echo "DOCKER_TAG         ${DOCKER_TAG}"
-	@echo "DOCKER_PLATFORM    ${DOCKER_PLATFORM}"
-	@echo "DOCKER_ENTRYPOINT  ${DOCKER_ENTRYPOINT}"
+	@echo "DOCKER_IMAGE	    ${DOCKER_IMAGE}"
+	@echo "DOCKER_USER         ${DOCKER_USER}"
+	@echo "DOCKER_NAME         ${DOCKER_NAME}"
+	@echo "DOCKER_TAG          ${DOCKER_TAG}"
+	@echo "DOCKER_PLATFORM     ${DOCKER_PLATFORM}"
+	@echo "DOCKER_ENTRYPOINT   ${DOCKER_ENTRYPOINT}"
+	@echo "DOCKER_BUILD_FLAGS  ${DOCKER_BUILD_FLAGS}"
 	@echo ------------------------
 	@echo "RUNAI_PROJECT      ${RUNAI_PROJECT}"
 	@echo "RUNAI_JOBNAME      ${RUNAI_JOBNAME}"

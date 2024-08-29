@@ -11,12 +11,8 @@ def get_dem_data(bbox_WSEN, s3_dst_dir):
 def get_era5_data(fname_config, dry_run):
     from scripts.era5.from_weatherbench import download_era5_from_weatherbench
     from scripts.config.loader import load_config_yaml
-    import dotenv
 
     config = load_config_yaml(fname_config)
-
-    dotenv.find_dotenv(raise_error_if_not_found=True)
-    dotenv.load_dotenv(verbose=True)
 
     download_era5_from_weatherbench(config)
 

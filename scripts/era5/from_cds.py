@@ -54,8 +54,6 @@ def run_cds_request_copy_file_s3(request:list, s3_dst_dir:str, remove_local:bool
     str
         The path to the file on S3 after copying
     """
-    dotenv.find_dotenv(raise_error_if_not_found=True)
-    dotenv.load_dotenv(verbose=True)
     fs = fsspec.filesystem("s3")
 
     s3_dst_dir = s3_dst_dir.strip("/")
