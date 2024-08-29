@@ -43,6 +43,8 @@ def load_config_yaml(fname_yaml)->_munch.Munch:
 
 def load_dotenv(path_to_dotenv: str):
     import dotenv
+    import os
+    import pathlib
 
     fname_dotenv = dotenv.find_dotenv()
     found = dotenv.load_dotenv(dotenv_path=fname_dotenv)
@@ -54,7 +56,11 @@ def load_dotenv(path_to_dotenv: str):
         env_vars = ", ".join(dotenv.dotenv_values(fname_dotenv))
         logger.success(f"Loaded .env variables: {env_vars}")
     else:
-        raise FileNotFoundError("No .env file found")
+        curdir = pathlib.Path(os.curdir()).resolve()
+        msg = (
+            f"No .env file found in upstream directories of {curdir} "
+            f"OR at the specified path: {path_to_dotenv}")
+        raise FileNotFoundError(msg)
 
 
 def make_template(filename_out:str, schema_fname=_SCHEMA_PATH):
