@@ -16,7 +16,7 @@ def load_config_yaml(fname_yaml)->_munch.Munch:
     import yaml
     import pathlib 
     import dotenv
-    from ..utils.dict_helpers import resolve_format_strings
+    from ..utils.helpers import resolve_format_strings
     from ..utils.yml_helpers import validate_yaml_file
 
     validate_yaml_file(fname_yaml, filename_schema=_SCHEMA_PATH)
@@ -35,12 +35,26 @@ def load_config_yaml(fname_yaml)->_munch.Munch:
     check_s3_paths(config)
     logger.success(f"Loaded request from {fname_yaml}")
 
-    load_dotenv(config.fname_dotenv)
-
+    get_env_vars(config.get('fname_dotenv', None))
 
     return config
 
 
+def get_env_vars(path_to_dotenv=None):
+    import os
+
+    if path_to_dotenv is not None:
+        load_dotenv()
+
+    try:
+        os.environ.get('AWS_ACCESS_KEY_ID')
+        os.environ.get('AWS_SECRET_ACCESS_KEY')
+        os.environ.get('AWS_ENDPOINT_URL')
+        logger.success("S3 bucket credentials found in environment variables")
+    except KeyError:
+        logger.warning("S3 bucket credentials not found in environment variables")
+
+    
 def load_dotenv(path_to_dotenv: str):
     import dotenv
     import os

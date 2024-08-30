@@ -12,11 +12,12 @@ def register_dask_progressbar_based_on_logger(log_level_thresh=20):
     log_levels = [hdl.levelno for hdl in handlers]
     log_level = min(log_levels)
     
-    if log_level <= log_level_thresh:    
+    if log_level <= log_level_thresh and not hasattr(logger, "cb"):    
         from tqdm.dask import TqdmCallback
 
-        cb = TqdmCallback(desc="global")
-        cb.register()
+        logger.info("Registering Dask progress bar")
+        logger.cb = TqdmCallback(desc="Dask processing")
+        logger.cb.register()
 
 
 @xr.register_dataset_accessor("s3")

@@ -16,7 +16,7 @@
 project: str(required=True, max=20)  # a short name for the project
 description: str(required=True, min=80)  # a longer description of the project
 fpath_base_s3: str(required=True, starts_with='s3://')  # the data will be stored on an S3 bucket (e.g. s3://bucket-name/{project})
-fname_dotenv: str(required=True, ends_with='.env')  # path to the .env file with S3 credentials (e.g. ~/cryogrid/.env)
+fname_dotenv: str(required=False, ends_with='.env')  # path to the .env file with S3 credentials (e.g. OPTIONAL)
 
 # Bounding box list with four num elements [lon_min, lat_min, lon_max, lat_max]
 bbox_WSEN: list(num(min=-180, max=180), min=4, max=4, required=True)  # west, south, east, north (e.g. [70.0, 37.0, 75.0, 41.0])
@@ -32,7 +32,7 @@ dem:
   fname: str(required=True, ends_with='.zarr')  # Zarr file name (e.g. DEM-{stac_collection}-{bbox_str}.zarr)
   fpath_s3: str(required=True)  # S3 path to store the DEM data (e.g. {fpath_base_s3}/dem/{fname})
   fpath_local: str(required=True)  # Local path to store the DEM data (e.g. ../data/{fname})
-  epsg: int(required=True, min=1000, max=99999)  # EPSG code for the projection (e.g. 32643)
+  epsg: int(required=True, min=1000, max=99999)  # EPSG code for the projection, default mercator (e.g. 3857)
   resolution: int(required=True)  # Resolution of the DEM data (e.g. 30)
 
 # ERA5 data request must contain standard variables for a CryoGrid TopoSub run - these are checked when config is loaded
@@ -45,9 +45,11 @@ era5:  # downloaded from the Google weatherbench dataset
     
   single_levels:
     dataset: str(required=True, ends_with='single-levels')  # Dataset name (e.g. reanalysis-era5-single-levels)
-    variable: list(str())  # List of variables (e.g. ['surface_solar_radiation_downwards', 'surface_thermal_radiation_downwards', ...])
+    # you can add to variables, but the default variables are the minimum required for a CryoGrid TopoSub run
+    variable: list(str())  # List of variables (e.g. ['surface_solar_radiation_downwards', 'surface_thermal_radiation_downwards', 'toa_incident_solar_radiation', 'total_precipitation', '10m_u_component_of_wind', '10m_v_component_of_wind', 'surface_pressure', '2m_dewpoint_temperature', '2m_temperature'])
 
   pressure_levels:
     dataset: str(required=True, ends_with='pressure-levels')  # Dataset name (e.g. reanalysis-era5-pressure-levels)
     pressure_level: list(str(matches='[0-9]{1,4}'), min=1)  # levels in hPa (e.g. ['700', '750', '800', '850', '900', '950', '1000'])
-    variable: list(str())  # List of variables (e.g. ['geopotential', 'specific_humidity', ...])
+    # you can add to variables, but the default variables are the minimum required for a CryoGrid TopoSub run
+    variable: list(str())  # List of variables (e.g. ['geopotential', 'specific_humidity', 'temperature', 'u_component_of_wind', 'v_component_of_wind'])
