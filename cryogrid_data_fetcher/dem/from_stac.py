@@ -36,13 +36,15 @@ def download_dem_to_s3(config: dict)->None:
 def get_stac_data(config: dict)->_xr.Dataset:
     import stackstac
     from ..utils.xr_helpers import coord_0d_to_attrs
+    from ..utils.stac_helpers import search_stac_items
 
     bbox = config['bbox_WSEN']
     stac_url = config['dem']['stac_catalog_url']
     stac_col = config['dem']['stac_collection']
     epsg = config['dem']['epsg']
     res = config['dem']['resolution']
-
+    
+    logger.info(f"Getting DEM data from {stac_url}/{stac_col} for WSEN: {bbox}")
     items = search_stac_items(stac_url, stac_col, bbox)
     da_dem = stackstac.stack(
         items=items, 
@@ -61,23 +63,3 @@ def get_stac_data(config: dict)->_xr.Dataset:
     )
     
     return ds_dem
-
-
-def search_stac_items(url, collection, bbox, **kwargs)->list:
-    import planetary_computer
-    import pystac_client
-
-
-    logger.info(f"Getting DEM data from {url}/{collection} for WSEN: {bbox}")
-
-    catalog = pystac_client.Client.open(
-        url=url,
-        modifier=planetary_computer.sign_inplace)
-
-    search = catalog.search(
-        collections=[collection],
-        bbox=bbox)
-
-    items = search.item_collection()
-
-    return items

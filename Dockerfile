@@ -1,5 +1,10 @@
 FROM mambaorg/micromamba:noble
 
+LABEL description="ERA5 downloader for CryoGrid model using WeatherBench. Also downloads DEM data."
+LABEL maintainer="gregorl@ethz.ch"
+LABEL docker.cmd="docker run --rm -ti --env-file .env lukegre/era5-downloader"
+LABEL docker.params="START_YEAR=ERA5 download start year; END_YEAR=ERA5 end year (inclusive)"
+
 # SYSTEM DEPENDENCIES - only using environment.yml and not requirements.txt
 COPY environment.yml /tmp/
 
