@@ -1,4 +1,4 @@
-# CryoGrid data downloader
+# CryoGrid data fetcher
 
 Create and launch docker containers to download data to run CryoGrid models using the topoSUB module. 
 
