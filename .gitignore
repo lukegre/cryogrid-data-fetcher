@@ -9,6 +9,10 @@
 **/__pycache__
 **/*.ipynb
 
+# data files
+**/*.nc
+**/cache
+
 # other
 **/.DS_Store
 **/*.bak

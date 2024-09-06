@@ -1,3 +1,4 @@
+import fsspec
 import xarray as xr
 import pandas as pd
 from loguru import logger
@@ -5,13 +6,16 @@ from ..utils import xr_helpers as xh
 
 
 def download_era5_from_weatherbench(data_config, download_batch_size='1MS'):
-    
+
     time_start = pd.Timestamp(str(data_config['start_year']))
     time_end = pd.Timestamp(f"{data_config['end_year']}-12-31")
     dates = pd.date_range(time_start, time_end, freq=download_batch_size)
     
+    file_list = [get_geopotential(data_config)]
     for t0, t1 in zip(dates[:-1], dates[1:]):
-        ds = download_era5_weatherbench_batch(data_config, t0, t1)
+        file_list += download_era5_weatherbench_batch(data_config, t0, t1),
+
+    return file_list
 
 
 def make_s3_path(data_config: dict, t0: pd.Timestamp, t1: pd.Timestamp)->str:
@@ -32,8 +36,7 @@ def make_s3_path(data_config: dict, t0: pd.Timestamp, t1: pd.Timestamp)->str:
     return s3_path
         
 
-def download_era5_weatherbench_batch(data_config, t0, t1):
-    import fsspec
+def download_era5_weatherbench_batch(data_config:dict, t0:pd.Timestamp, t1:pd.Timestamp)->str:
     from pqdm.threads import pqdm
     
     s3_path = make_s3_path(data_config, t0, t1)
@@ -42,7 +45,7 @@ def download_era5_weatherbench_batch(data_config, t0, t1):
 
     if fs.exists(s3_path):
         logger.info(f"File already exists: {s3_path}")
-        return fs.open(s3_path)
+        return s3_path
 
     logger.info(f"Downloading ERA5 data: {t0:%Y-%m-%d} to {t1:%Y-%m-%d}")
     
@@ -53,11 +56,11 @@ def download_era5_weatherbench_batch(data_config, t0, t1):
     results = pqdm(urls, subset_netcdf, n_jobs=n_jobs, exception_behaviour='immediate')
     ds = xr.merge(results)
 
-    s3_file = ds.s3.to_netcdf(s3_path)
-    return s3_file
+    ds.s3.to_netcdf(s3_path)
+    return s3_path
     
     
-def make_weatherbench_era5_url_list(data_config, t0, t1):
+def make_weatherbench_era5_url_list(data_config:dict, t0:str, t1:str)->list:
     import pandas as pd
     
     dates = pd.date_range(t0, t1, freq='1D', inclusive='left')
@@ -76,7 +79,7 @@ def make_weatherbench_era5_url_list(data_config, t0, t1):
     return url_list
 
 
-def make_weatherbench_era5_url(**kwargs):
+def make_weatherbench_era5_url(**kwargs)->str:
     url_pres = "gs://gcp-public-data-arco-era5/raw/date-variable-pressure_level/{t:%Y}/{t:%m}/{t:%d}/{variable}/{level}.nc"
     url_surf = "gs://gcp-public-data-arco-era5/raw/date-variable-single_level/{t:%Y}/{t:%m}/{t:%d}/{variable}/surface.nc"
 
@@ -86,8 +89,7 @@ def make_weatherbench_era5_url(**kwargs):
         return url_surf.format(**kwargs)
     
 
-def make_gc_netcdf_subsetter(data_config):
-    import fsspec
+def make_gc_netcdf_subsetter(data_config)->callable:
     import pathlib
     import xarray as xr
     import rioxarray  # imported to have rio accessors
@@ -115,3 +117,32 @@ def make_gc_netcdf_subsetter(data_config):
     return subset_gc_netcdf
     
 
+def get_geopotential(config:dict)->str:
+    """
+    Downloads the ERA5 geopotential data from weatherbench and saves it to s3 
+    Only needs to be done once for the entire request
+    """
+    import re
+    from ..utils.s3_helpers import is_safe_s3_path
+
+    fname = re.sub(r'\{.*\}', 'geopotential', config.era5.fname)
+    s3_path = f"{config.era5.dst_dir_s3}/{fname}"
+    
+    is_safe_s3_path(s3_path)
+
+    fs = fsspec.filesystem('s3')
+    if fs.exists(s3_path):
+        logger.info(f"File already exists: {s3_path}")
+    else:
+        logger.info("Downloading ERA5 geopotential data")
+        # create the function that subsets to the specific region and downloads the data
+        func_subset_era5 = make_gc_netcdf_subsetter(config)
+        # make the url to download - surface geopotential at any time - here we use 2000
+        url = make_weatherbench_era5_url(t=pd.Timestamp('2000'), variable='geopotential')
+        
+        # process the data 
+        ds = func_subset_era5(url).mean('time').rename(z='Zs')
+
+        ds.s3.to_netcdf(s3_path)
+    
+    return s3_path
