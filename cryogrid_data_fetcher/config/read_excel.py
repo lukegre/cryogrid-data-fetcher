@@ -2,33 +2,65 @@ import pathlib
 import pandas as pd
 import numpy as np
 from .. import logger
+from munch import Munch
 
 
 class CryoExcel:
-    def __init__(self, fname_xls: str):
+    def __init__(self, fname_xls: str, checks=True):
         self.fname = pathlib.Path(fname_xls).resolve()
         self.path = self.fname.parent
-        self._df = self._load_cryogrid_xls(fname_xls)
+        self._df = self._load_xls(fname_xls)
         logger.info(f"Loaded CryoGrid Excel configuration file: {self.fname}")
 
+        if checks:
+            self.check_forcing_fname_times()
+
+        self.fname = Munch()
+        self.fname.dem = self.get_dem_path()
+        self.fname.coords = self.get_coord_path()
+        self.fname.era5 = self.get_forcing_path()
+        self.fname.datasets = self.get_dataset_paths()
+
+    def get_start_end_times(self):
+        times = self.get_class('set_start_end_time').T.filter(regex='time')
+        times = times.map(lambda x: pd.Timestamp(year=int(x[0]), month=int(x[1]), day=int(x[2])))
+
+        start = times.start_time.min()
+        end = times.end_time.max()
+        times = pd.Series([start, end], index=['time_start', 'time_end'])
+
+        return times
+
     def get_coord_path(self):
-        
-        paths = self.get_class_filepath('COORDINATES_FROM_FILE', fname_key='file_name')
-        return paths.iloc[0]    
+        fname = self.get_class_filepath('COORDINATES_FROM_FILE', fname_key='file_name', index=1)
+        return fname
 
     def get_dataset_paths(self):
         paths = self.get_class_filepath('READ_DATASET', fname_key='filename')
         return paths
     
     def get_dem_path(self):
-        paths = self.get_class_filepath('read_mat_ERA', folder_key='path', fname_key='filename')
-        return paths.iloc[0]
+        fname = self.get_class_filepath('DEM', folder_key='folder', fname_key='filename', index=1)
+        return fname
     
-    def get_forcing_paths(self):
-        paths = self.get_class_filepath('read_mat_ERA', folder_key='path', fname_key='filename')
-        return paths.iloc[0]
+    def get_forcing_path(self, class_name='read_mat_ERA'):
+        fname = self.get_class_filepath(class_name, folder_key='path', fname_key='filename', index=1)
+        return fname
     
-    def _load_cryogrid_xls(self, fname_xls: str) -> pd.DataFrame:
+    def check_forcing_fname_times(self):
+        """
+        a quick check to see if the file name matches the given forcing years
+        """
+        import re
+
+        fname = self.get_forcing_path()
+        times = self.get_start_end_times().dt.year.astype(str).values.tolist()
+
+        fname_years = re.findall(r'[-_]([12][1089][0-9][0-9])', fname.stem)
+        
+        assert times == fname_years, f"File name years do not match the forcing years: forcing {times} != fname {fname_years}"
+    
+    def _load_xls(self, fname_xls: str) -> pd.DataFrame:
         import string
 
         alphabet = string.ascii_uppercase
@@ -52,7 +84,7 @@ class CryoExcel:
         
     def get_class_filepath(self, key, folder_key='folder', fname_key='file', index=None):
 
-        df = self._get_cryogrid_classes(key)
+        df = self.get_class(key)
 
         keys = df.index.values
         folder_key = keys[[folder_key in k for k in keys]]
@@ -71,8 +103,7 @@ class CryoExcel:
         else:
             raise TypeError(f"index must be None or int, not {type(index)}")
         
-
-    def _get_cryogrid_classes(self, class_name: str):
+    def get_class(self, class_name: str):
         df = self._df
         i0s = df.A == class_name
         i0s = i0s[i0s].index.values

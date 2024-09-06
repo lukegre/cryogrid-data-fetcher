@@ -136,7 +136,7 @@ def get_era5_ds_as_dict(ds: xr.Dataset)->dict:
     era['v10'] = ds['v10'].values
     era['ps'] = ds['sp'].values
     # temperature variables (degK -> degC)
-    era['T2d'] = ds['d2m'].values - 273.15
+    era['Td2'] = ds['d2m'].values - 273.15
     era['T2'] = ds['t2m'].values - 273.15
     # radiation variables (/sec -> /hour)
     era['SW'] = ds['ssrd'].values / 3600
@@ -168,7 +168,7 @@ def get_era5_ds_as_dict(ds: xr.Dataset)->dict:
     era['v10']   = (era['v10']   / era['wind_sf']).astype(np.int16)
     # temperature scaling
     era['T']     = (era['T']     / era['T_sf']   ).astype(np.int16)
-    era['T2d']   = (era['T2d']   / era['T_sf']   ).astype(np.int16)
+    era['Td2']   = (era['Td2']   / era['T_sf']   ).astype(np.int16)
     era['T2']    = (era['T2']    / era['T_sf']   ).astype(np.int16)
     # humidity scaling
     era['q']     = (era['q']     / era['q_sf']   ).astype(np.uint16)
