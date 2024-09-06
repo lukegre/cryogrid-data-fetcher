@@ -1,0 +1,4 @@
+# do not copy the following files during build
+
+# nc files in data/ can be large
+**/*.nc

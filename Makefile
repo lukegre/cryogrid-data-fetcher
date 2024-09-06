@@ -34,6 +34,9 @@ else
 include .env
 endif
 
+image: ## Docker - export the docker image name to the console
+	@echo ${DOCKER_IMAGE}
+
 build:  ## Docker - build the docker image from ./Dockerfile
 	docker build --platform=${DOCKER_PLATFORM} -t ${DOCKER_IMAGE} .
 
@@ -58,7 +61,7 @@ runai-login:  ## RunAI - login to runai
 	@runai login
 
 runai-submit:  ## RunAI - submit the job to runai - also mounts the s3 bucket
-	@echo runai submit ${RUNAI_JOBNAME} \
+	@runai submit ${RUNAI_JOBNAME} \
 		--cpu ${CPUS} \
 		--memory ${RAM} \
 		--environment AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
