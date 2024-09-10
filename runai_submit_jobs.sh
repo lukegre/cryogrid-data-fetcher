@@ -7,15 +7,16 @@
 # On the SDSC's RunAI setup, workloads are limited to downloading at ~70MB/s
 # But multiple jobs can be run in parallel to increase the download speed
 
-START=1968  # inclusive
-END=2023  # inclusive
-STEP=8  # 8 years per job
+START=1960  # inclusive
+END=2024  # inclusive
+STEP=5  # n years per job
 IMAGE=$(make image)
 
 for START_YEAR in $(seq $START $STEP $END); do
-    END_YEAR=$(($START_YEAR+7))
+    DIFF=$((STEP-1))
+    END_YEAR=$(($START_YEAR + $DIFF))
     
-    runai submit spi-luke-era5-downloader-$START_YEAR-$END_YEAR \
+    echo runai submit spi-luke-era5-downloader-$START_YEAR-$END_YEAR \
         --cpu 2 \
         --memory 12G \
         --environment START_YEAR=$START_YEAR \
@@ -24,4 +25,6 @@ for START_YEAR in $(seq $START $STEP $END); do
         --environment AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
         --environment AWS_ENDPOINT_URL=${AWS_ENDPOINT_URL} \
         --image $IMAGE
+
+    # runai delete job spi-luke-era5-downloader-$START_YEAR-$END_YEAR
 done

@@ -105,8 +105,10 @@ def get_era5_ds_as_dict(ds: xr.Dataset)->dict:
     ds : xr.Dataset
         Dataset from the ERA5 Copernicus CDS with variables required for 
         the CryoGrid.POST_PROC.read_mat_ERA class 
-        single_levels   = [u10, v10, sp, d2m, t2m, ssrd, strd, tisr, tp]
+        single_levels   = [u10, v10, sp, d2m, t2m, ssrd, strd, tisr, tp, Zs]
         pressure_levels = [t, z, q, u, v]
+        Note that Zs in the single levels is a special case since it is only 
+        downloaded for a single date at the surface (doesn't change over time)
 
     Returns
     -------

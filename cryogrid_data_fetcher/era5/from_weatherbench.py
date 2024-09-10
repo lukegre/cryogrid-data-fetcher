@@ -8,7 +8,7 @@ from ..utils import xr_helpers as xh
 def download_era5_from_weatherbench(data_config, download_batch_size='1MS'):
 
     time_start = pd.Timestamp(str(data_config['start_year']))
-    time_end = pd.DateOffset(years=1) + time_start
+    time_end = pd.Timestamp(year=int(data_config['end_year']) + 1, month=1, day=1)
     dates = pd.date_range(time_start, time_end, freq=download_batch_size)
 
     file_list = [get_geopotential(data_config)]

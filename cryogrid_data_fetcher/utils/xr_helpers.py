@@ -6,14 +6,14 @@ from .. import logger
 from ..utils.s3_helpers import is_safe_s3_path
 
 
-def register_dask_progressbar_based_on_logger(log_level_thresh=20):
+def register_dask_progressbar_based_on_logger(log_level_thresh=15):
     """
     Register Dask progress bar based on the logger level.
 
     Parameters
     ----------
     log_level_thresh : int, optional
-        Log level threshold for displaying the progress bar. Default is 20 (INFO).
+        Log level threshold for displaying the progress bar. Default is 15 ((DEBUG + INFO) / 2).
 
     Returns
     -------

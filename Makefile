@@ -78,6 +78,13 @@ runai-logs:  ## RunAI - get the logs of the job
 runai-delete:  ## RunAI - delete the job
 	@runai delete job ${RUNAI_JOBNAME} -p ${RUNAI_PROJECT}
 
+runai-del-fin:  ## RunAI - delete all completed jobs
+	@runai list jobs | sed -n '/Succeeded/p' | awk '{print $$1}' > .completed.txt
+	@echo "Deleting $$(cat .completed.txt | wc -l) completed jobs"
+	@(for JOB in $$(cat .completed.txt); do runai delete job -p ${RUNAI_PROJECT} $$JOB; done)
+	@rm .completed.txt
+
+
 submit: runai-submit # hidden alias
 logs: runai-logs # hidden alias
 status: runai-status # hidden alias
