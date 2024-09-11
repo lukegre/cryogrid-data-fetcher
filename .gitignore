@@ -18,4 +18,5 @@
 **/*.bak
 
 # exceptions
-!demo.ipynb
+!demo-cryogird_exper.ipynb
+!demo-cryogrid_exper.ipynb

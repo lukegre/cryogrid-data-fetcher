@@ -6,9 +6,11 @@ from munch import Munch
 
 
 class CryoExcel:
-    def __init__(self, fname_xls: str, checks=True):
+    def __init__(self, fname_xls: str, checks=True, bbox_WSEN=None):
+        import dotenv
+
         self.fname = pathlib.Path(fname_xls).resolve()
-        self.path = self.fname.parent
+        self.root = self._get_root_path()
         self._df = self._load_xls(fname_xls)
         logger.info(f"Loaded CryoGrid Excel configuration file: {self.fname}")
 
@@ -20,6 +22,25 @@ class CryoExcel:
         self.fname.coords = self.get_coord_path()
         self.fname.era5 = self.get_forcing_path()
         self.fname.datasets = self.get_dataset_paths()
+        
+        self.time = self.get_start_end_times()
+        self.bbox_WSEN = bbox_WSEN
+
+        logger.info(f"Bounding box (WSEN): {self.bbox_WSEN}")
+        logger.info(f"Start and end times: {self.time.time_start:%Y-%m-%d} - {self.time.time_end:%Y-%m-%d}")
+
+    def _get_root_path(self):
+        path = self.fname.parent
+        while True:
+            flist = path.glob('run_cryogrid.m')
+            if len(list(flist)) > 0:
+                self.root = path
+                logger.info(f"Found root path: {path}")
+                return self.root
+            elif str(path) == '/':
+                raise FileNotFoundError("Could not find root path")
+            else:
+                path = path.parent
 
     def get_start_end_times(self):
         times = self.get_class('set_start_end_time').T.filter(regex='time')
@@ -94,7 +115,7 @@ class CryoExcel:
         assert len(fname_key) == 1, f"Multiple fname keys found: {fname_key}"
 
         names = df.loc[[folder_key[0], fname_key[0]]]
-        names = names.apply(lambda ser: self.path / ser.iloc[0] / ser.iloc[1])
+        names = names.apply(lambda ser: self.root / ser.iloc[0] / ser.iloc[1])
 
         if index is None:
             return names
