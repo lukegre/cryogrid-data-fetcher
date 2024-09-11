@@ -12,4 +12,8 @@ from .dem.from_stac import main as download_dem_from_planetary_computer
 from .dem import from_stac as dem
 from .utils.helpers import change_logger_level
 
-change_logger_level('INFO')
+try:
+    logger.level(name='VERBOSE', no=15, color='<black>', icon='🗣️')
+    change_logger_level('VERBOSE')
+except TypeError as e:
+    print(e)

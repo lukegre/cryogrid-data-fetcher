@@ -34,8 +34,8 @@ def load_config_yaml(fname_yaml)->_munch.Munch:
     check_era5_vars(config)
     check_s3_paths(config)
     logger.success(f"Loaded request from {fname_yaml}")
-    logger.info(f"Request bbox: {config.bbox_WSEN}")
-    logger.info(f"Request dates: [{config.start_year} : {config.end_year}]")
+    logger.log('VERBOSE', f"Request bbox: {config.bbox_WSEN}")
+    logger.log('VERBOSE', f"Request dates: [{config.start_year} : {config.end_year}]")
 
     get_env_vars(config.get('fname_dotenv', None))
 
