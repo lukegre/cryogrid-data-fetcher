@@ -67,8 +67,10 @@ def main(
         ds_exp = xr.open_dataset(nc_fname)
     else:
         # Load ERA5 files as a single dataset 
+        logger.log('VERBOSE', f'Loading ERA5 data from {s3_fnames}')
         ds_raw = S3io.open_mfdataset(s3_fnames, local_cache=local_cache_dir)
         # Clip to the region of interest and select the years of interest
+        logger.log('VERBOSE', f'Clipping to bbox {bbox_WSEN} and years {year_start} to {year_end}')
         ds_exp = (
             ds_raw
             .rio.clip_box(*bbox_WSEN, crs='EPSG:4326')
@@ -80,6 +82,7 @@ def main(
         for key in ds_exp.data_vars.keys():
             ds_exp[key].attrs = ds_raw[key].attrs
         # Save to netcdf for later use
+        logger.log('VERBOSE', f'Saving clipped data to {nc_fname}')
         ds_exp.to_netcdf(nc_fname, encoding={k: dict(zlib=True) for k in ds_exp.data_vars})
     
     # Save to MATLAB file

@@ -68,6 +68,8 @@ def change_logger_level(level):
     if isinstance(level, str):
         if level == "DEBUG":
             level = 10
+        elif level == "VERBOSE":
+            level = 15
         elif level == "INFO":
             level = 20
         elif level == "WARNING":
