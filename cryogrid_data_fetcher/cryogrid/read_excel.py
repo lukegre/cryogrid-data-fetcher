@@ -57,7 +57,14 @@ class CryoExcel:
         return fname
 
     def get_dataset_paths(self):
-        paths = self.get_class_filepath('READ_DATASET', fname_key='filename')
+        paths = self.get_class_filepath('READ_DATASET', fname_key='filename').to_frame(name='filepath').T
+        
+        datasets = self.get_class('READ_DATASET')
+        variable = datasets.T.variable_name
+        paths.loc['variable'] = variable
+
+        paths = Munch(**paths.T.set_index('variable').filepath.to_dict())
+        
         return paths
     
     def get_dem_path(self):
@@ -84,10 +91,11 @@ class CryoExcel:
     def _load_xls(self, fname_xls: str) -> pd.DataFrame:
         import string
 
-        alphabet = string.ascii_uppercase
+        alph = list(string.ascii_uppercase)
+        alphabet_extra = alph + [a+b for a in alph for b in alph]
 
         df = pd.read_excel(fname_xls, header=None, dtype=str)
-        df.columns = [c for c in alphabet[:df.columns.size]]
+        df.columns = [c for c in alphabet_extra[:df.columns.size]]
         df.index = df.index + 1
 
         return df

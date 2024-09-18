@@ -38,6 +38,18 @@ def register_dask_progressbar_based_on_logger(log_level_thresh=15):
         return True 
     else:
         return False
+    
+
+def unregister_dask_progressbar():
+    """
+    Deregister the Dask progress bar.
+    """
+    if hasattr(logger, "cb"):
+        logger.cb.unregister()
+        del logger.cb
+        logger.info("Deregistered Dask progress bar")
+    else:
+        logger.debug("Dask progress bar is not registered")
 
 
 @xr.register_dataset_accessor("s3")
@@ -109,85 +121,89 @@ class S3io:
         return file_s3
     
     @staticmethod
-    def open_mfdataset(s3_name, local_cache=None, **kwargs):
-        """
-        Open a dataset from multiple files on S3.
+    def open_mfdataset(s3_path: str, local_cache=None, **kwargs):
+        return open_mfdataset(s3_path, local_cache, **kwargs)
 
-        Notes
-        -----
-        A progressbar for loading the data will be displayed if the tqdm package is installed 
-        and 
 
-        Parameters
-        ----------
-        s3_name : str or list
-            S3 path or list of S3 paths to the files. If the path contains a * character,
-            it is treated as a glob pattern. If it ends on a / character, it is treated as
-            a directory and all .nc files in the directory are opened. If a list is provided,
-            all files in the list are opened. Failure to meet these conditions will raise
-            an error.
-        local_cache : str, optional
-            Local cache directory to store the files. If None (default), no local cache
-            is used. If a string is provided, the files are cached in the directory.
-            If the directory does not exist, an error is raised.
-        progressbar : bool, optional
-            If True, a progressbar is displayed while loading the data. Default is True.
+def open_mfdataset(s3_name, local_cache=None, **kwargs):
+    """
+    Open a dataset from multiple files on S3.
 
-        Returns
-        -------
-        xarray.Dataset
-            Dataset created from the files
+    Notes
+    -----
+    A progressbar for loading the data will be displayed if the tqdm package is installed 
+    and 
 
-        Raises
-        ------
-        FileNotFoundError
-            If the local cache directory does not exist.
-        ValueError
-            If the s3_name does not meet the conditions described above.
-        """
+    Parameters
+    ----------
+    s3_name : str or list
+        S3 path or list of S3 paths to the files. If the path contains a * character,
+        it is treated as a glob pattern. If it ends on a / character, it is treated as
+        a directory and all .nc files in the directory are opened. If a list is provided,
+        all files in the list are opened. Failure to meet these conditions will raise
+        an error.
+    local_cache : str, optional
+        Local cache directory to store the files. If None (default), no local cache
+        is used. If a string is provided, the files are cached in the directory.
+        If the directory does not exist, an error is raised.
+    progressbar : bool, optional
+        If True, a progressbar is displayed while loading the data. Default is True.
 
-        if local_cache is None:
-            logger.warning("No local cache directory provided, opening S3 files without caching may be slower")
-            desc = "Opening S3 files (no local cache)"
-            fs = fsspec.filesystem("s3")
-        elif isinstance(local_cache, str) and pathlib.Path(local_cache).exists():
-            desc = "Downloading S3 files to local cache"
-            fs = fsspec.filesystem(
-                "filecache", 
-                target_protocol="s3",
-                cache_storage=local_cache,
-                same_names=True)
-        elif isinstance(local_cache, str) and not pathlib.Path(local_cache).exists():
-            raise FileNotFoundError(f"Local cache directory does not exist: {local_cache}")
-        
-        if isinstance(s3_name, (list, tuple)):
-            s3_paths = s3_name
-        elif isinstance(s3_name, str):
-            if '*' in s3_name and s3_name.endswith('/'):
-                raise ValueError("s3_name cannot contain * and end with a / character")
-            elif '*' in s3_name:
-                s3_paths = fs.glob(s3_name)
-            elif s3_name.endswith('/'):
-                s3_paths = fs.glob(s3_name + "*.nc")
-            else:
-                if fs.isdir(s3_name):
-                    s3_paths = fs.glob(s3_name + "/*.nc")
-                else:
-                    raise ValueError("s3_name should contain * or be a directory")
+    Returns
+    -------
+    xarray.Dataset
+        Dataset created from the files
+
+    Raises
+    ------
+    FileNotFoundError
+        If the local cache directory does not exist.
+    ValueError
+        If the s3_name does not meet the conditions described above.
+    """
+
+    if local_cache is None:
+        logger.warning("No local cache directory provided, opening S3 files without caching may be slower")
+        desc = "Opening S3 files (no local cache)"
+        fs = fsspec.filesystem("s3")
+    elif isinstance(local_cache, str) and pathlib.Path(local_cache).exists():
+        desc = "Downloading S3 files to local cache"
+        fs = fsspec.filesystem(
+            "filecache", 
+            target_protocol="s3",
+            cache_storage=local_cache,
+            same_names=True)
+    elif isinstance(local_cache, str) and not pathlib.Path(local_cache).exists():
+        raise FileNotFoundError(f"Local cache directory does not exist: {local_cache}")
+    
+    if isinstance(s3_name, (list, tuple)):
+        s3_paths = s3_name
+    elif isinstance(s3_name, str):
+        if '*' in s3_name and s3_name.endswith('/'):
+            raise ValueError("s3_name cannot contain * and end with a / character")
+        elif '*' in s3_name:
+            s3_paths = fs.glob(s3_name)
+        elif s3_name.endswith('/'):
+            s3_paths = fs.glob(s3_name + "*.nc")
         else:
-            raise ValueError("s3_name should be a string or a list of strings")
-        
-        if register_dask_progressbar_based_on_logger():
-            from tqdm.auto import tqdm
-            s3_paths = tqdm(s3_paths, desc=desc)
+            if fs.isdir(s3_name):
+                s3_paths = fs.glob(s3_name + "/*.nc")
+            else:
+                raise ValueError("s3_name should contain * or be a directory")
+    else:
+        raise ValueError("s3_name should be a string or a list of strings")
+    
+    if register_dask_progressbar_based_on_logger():
+        from tqdm.auto import tqdm
+        s3_paths = tqdm(s3_paths, desc=desc)
 
-        s3_flist = [fs.open(s3_path) for s3_path in s3_paths]
-        
-        props = dict(parallel=True)
-        props.update(kwargs)
-        ds = xr.open_mfdataset(s3_flist, **props)
+    s3_flist = [fs.open(s3_path) for s3_path in s3_paths]
+    
+    props = dict(parallel=True)
+    props.update(kwargs)
+    ds = xr.open_mfdataset(s3_flist, **props)
 
-        return ds
+    return ds
 
 
 def coord_0d_to_attrs(ds):
@@ -196,10 +212,23 @@ def coord_0d_to_attrs(ds):
         if ds[coord].shape == ():
             val = ds[coord].values
             try:
-                val = str(val)
+                val = str(val).replace(':', '_')
                 attrs[coord] = val
             except:
                 pass
     ds.attrs.update(attrs)
     ds = ds.drop_vars(attrs.keys())
     return ds
+
+
+def drop_non_index_coords(da):
+    """
+    Drops coordinates that are not index variables
+    """
+    drop = set(da.coords) - set(da.dims)
+    da = da.drop_vars(drop)
+    return da
+
+    
+logger.register_dask_progressbar = register_dask_progressbar_based_on_logger
+logger.unregister_dask_progressbar = unregister_dask_progressbar

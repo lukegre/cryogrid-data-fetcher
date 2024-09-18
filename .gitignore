@@ -20,3 +20,4 @@
 # exceptions
 !demo-cryogird_exper.ipynb
 !demo-cryogrid_exper.ipynb
+data/**
