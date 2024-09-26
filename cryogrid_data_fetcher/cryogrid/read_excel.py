@@ -12,7 +12,7 @@ class CryoExcel:
         self.fname = pathlib.Path(fname_xls).resolve()
         self.root = self._get_root_path()
         self._df = self._load_xls(fname_xls)
-        logger.info(f"Loaded CryoGrid Excel configuration file: {self.fname}")
+        logger.success(f"Loaded CryoGrid Excel configuration file: {self.fname}")
 
         if checks:
             self.check_forcing_fname_times()
@@ -26,8 +26,8 @@ class CryoExcel:
         self.time = self.get_start_end_times()
         self.bbox_WSEN = bbox_WSEN
 
-        logger.info(f"Bounding box (WSEN): {self.bbox_WSEN}")
-        logger.info(f"Start and end times: {self.time.time_start:%Y-%m-%d} - {self.time.time_end:%Y-%m-%d}")
+        logger.log("VERBOSE", f"Bounding box (WSEN): {self.bbox_WSEN}")
+        logger.log("VERBOSE", f"Start and end times: {self.time.time_start:%Y-%m-%d} - {self.time.time_end:%Y-%m-%d}")
 
     def _get_root_path(self):
         path = self.fname.parent
@@ -35,7 +35,7 @@ class CryoExcel:
             flist = path.glob('run_cryogrid.m')
             if len(list(flist)) > 0:
                 self.root = path
-                logger.info(f"Found root path: {path}")
+                logger.log("VERBOSE", f"Found root path: {path}")
                 return self.root
             elif str(path) == '/':
                 raise FileNotFoundError("Could not find root path")

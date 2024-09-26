@@ -20,7 +20,6 @@ def register_dask_progressbar_based_on_logger(log_level_thresh=15):
     bool
         True if the progress bar is registered, False otherwise.
     """
-    from dask.diagnostics import ProgressBar
 
     handlers = logger._core.handlers.values()
     log_levels = [hdl.levelno for hdl in handlers]

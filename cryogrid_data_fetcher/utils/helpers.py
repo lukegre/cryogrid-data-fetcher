@@ -1,3 +1,5 @@
+import functools
+import weakref
 import string
 from .. import logger
 
@@ -43,6 +45,15 @@ def resolve_format_strings(dct):
     dct = _resolve_format_strings(dct)
     dct = _resolve_format_strings(dct)
     return dct
+
+
+def get_loguru_level():
+
+    handlers = logger._core.handlers
+    key = list(handlers)[0]
+    handler = handlers[key]
+    level = handler.levelno
+    return level
 
 
 def change_logger_level(level):

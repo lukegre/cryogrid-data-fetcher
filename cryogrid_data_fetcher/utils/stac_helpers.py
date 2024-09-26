@@ -1,5 +1,9 @@
 
-def search_stac_items(url, collection, bbox, **kwargs)->list:
+
+URL_PLANETARY_COMPUTER = "https://planetarycomputer.microsoft.com/api/stac/v1"
+
+
+def search_stac_items(collection, bbox, url=URL_PLANETARY_COMPUTER, **kwargs)->list:
     import planetary_computer
     import pystac_client
 
@@ -21,7 +25,7 @@ def get_sentinel2_granules(bbox, start_date, end_date, assets=['SCL'], max_cloud
     import stackstac
 
     items = search_stac_items(
-        url="https://planetarycomputer.microsoft.com/api/stac/v1",
+        url=URL_PLANETARY_COMPUTER,
         collection="sentinel-2-l2a",
         bbox=bbox,
         datetime=f"{start_date}/{end_date}",

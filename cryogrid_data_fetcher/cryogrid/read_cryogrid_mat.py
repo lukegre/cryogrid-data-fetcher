@@ -1,5 +1,10 @@
+import warnings
+import dask
 import xarray as xr
-from loguru import logger
+
+from .. import logger
+
+warnings.filterwarnings("ignore", category=dask.array.core.PerformanceWarning)
 
 
 def decompose_decimal_day(matlab_date):
@@ -78,9 +83,10 @@ def read_cryogrid_spatial_run_info(fname):
         df
         .loc[cluster_idx]
         .set_index(cluster_idx)
-        .to_xarray())
+        .to_xarray()
+        .rename(index='gridcell'))
     
-    df = df.to_xarray()
+    df = df.to_xarray().rename(index='gridcell')
 
     return centroids, df
 
@@ -88,7 +94,7 @@ def read_cryogrid_spatial_run_info(fname):
 def read_OUT_regridded_FCI2_file(fname):
     import xarray as xr
 
-    centroid_index = int(fname.split('_')[-2])
+    gridcell = int(fname.split('_')[-2])
 
     data = read_mat_struct_flat_as_dict(fname)
     
@@ -106,7 +112,7 @@ def read_OUT_regridded_FCI2_file(fname):
     
     ds['elevation'] = xr.DataArray(data=elevation, dims=('level',))
     ds = ds.chunk({})
-    ds = ds.expand_dims(index=[centroid_index])
+    ds = ds.expand_dims(gridcell=[gridcell])
     ds = ds.isel(time=slice(0, -1))
         
     return ds
@@ -137,38 +143,37 @@ def read_OUT_regridded_FCI2_parallel(glob_fname, **joblib_kwargs):
     return ds
 
 
-def read_OUT_regridded_FCI2_TopoSub(fname_outputs_mat, fname_spatial_mat):
+def read_OUT_regridded_FCI2_TopoSub(fname_outputs_mat, fname_spatial_mat, **joblib_kwargs):
 
     centroids, spatial = read_cryogrid_spatial_run_info(fname_spatial_mat)
-    ds = read_OUT_regridded_FCI2_parallel(fname_outputs_mat)
+    profiles = read_OUT_regridded_FCI2_parallel(fname_outputs_mat, **joblib_kwargs)
 
-    crygrid_idx = set(ds.index.values)
-    centroids_idx = set(centroids.index.values)
+    crygrid_idx = set(profiles.gridcell.values)
+    centroids_idx = set(centroids.gridcell.values)
     missing_indicies = list(centroids_idx.difference(crygrid_idx))
 
     # return ds, centroids, spatial
-    ds = ds.reindex(index=centroids.index)
+    profiles = profiles.reindex(gridcell=centroids.gridcell)
     if len(missing_indicies) > 0:
         logger.warning(f"Missing indicies: n = {len(missing_indicies)}; check the CryoGrid run log files to look for failed clusters")
 
     # if loading multiple years, then elevation has a fictitious time dimension
-    if 'time' in ds.elevation.dims:
+    if 'time' in profiles.elevation.dims:
         logger.debug("Removing ficticious time dimension from elevation")
-        ds['elevation'] = ds.elevation.mean('time')
+        profiles['elevation'] = profiles.elevation.mean('time')
 
-    depth = ds.elevation - centroids.elevation
-    # check all values of depth along the "index" dimension are the same
-    max_std = depth.std('index').max().compute().values
-    error_msg = f"Depth is not constant along index (max = {max_std:.04g})"
+    depth = profiles.elevation - centroids.elevation
+    # check all values of depth along the "gridcell" dimension are the same
+    max_std = depth.std('gridcell').max().compute().values
+    error_msg = f"Depth is not constant along gridcell (max = {max_std:.04g})"
     assert max_std < 5e-2, error_msg
 
-    depth = depth.mean('index').compute()
-    ds = ds.assign_coords(level=depth).rename(level='depth')
+    depth = depth.mean('gridcell').compute()
+    profiles = profiles.assign_coords(level=depth).rename(level='depth')
 
-    index = ds.index.copy(deep=True)
-    ds = ds.assign(index=centroids.cluster_num).rename(index='cluster')
+    profiles = profiles.assign(gridcell=centroids.cluster_num).rename(gridcell='cluster')
 
-    return ds, centroids, spatial
+    return profiles, centroids, spatial
 
 
 def read_stratigraphy_labels(fname_excell, pointer_label_col1="STRATIGRAPHY_STATVAR", row_offset=-1, col_offset=0):
@@ -221,9 +226,9 @@ def read_stratigraphy_labels(fname_excell, pointer_label_col1="STRATIGRAPHY_STAT
 
     
 class CryoGrid_TopoSub:
-    def __init__(self, fname_profiles:str, fname_spatial:str) -> None:
+    def __init__(self, fname_profiles:str, fname_spatial:str, **joblib_kwargs) -> None:
         from glob import glob
-        import xrspatial
+        # import xrspatial
 
         self.fname_spatial = fname_spatial
         self.fname_profiles = fname_profiles
@@ -233,7 +238,7 @@ class CryoGrid_TopoSub:
         logger.info(f"Reading {len(flist)} files in parallel")
     
         data, centroids, spatial_flat = read_OUT_regridded_FCI2_TopoSub(
-            fname_profiles, fname_spatial)
+            fname_profiles, fname_spatial, **joblib_kwargs)
         
         self.data = data
         self.centroids = centroids
@@ -244,13 +249,19 @@ class CryoGrid_TopoSub:
 
         self.spatial_mapped = xr.Dataset()
         self.spatial_mapped['elevation'] = self.get_mapped(spatial_flat.elevation)
-        self.spatial_mapped['hillshade'] = xrspatial.hillshade(self.spatial_mapped.elevation, azimuth=0)  # azimuth=0 -> south
+        # self.spatial_mapped['hillshade'] = xrspatial.hillshade(self.spatial_mapped.elevation, azimuth=0)  # azimuth=0 -> south
         self.spatial_mapped['cluster_num'] = self.get_mapped(spatial_flat.cluster_num)
         
         logger.debug("Data stored in `self.data`, `self.centroids`, `self.spatial_flat`, `self.spatial_mapped`")
     
     def __repr__(self) -> str:
-        txt = f"CryoGrid_TopoSub(\n\t{self.fname_profiles}\n\t{self.fname_spatial})\n"
+        txt = f"CryoGrid_TopoSub(\n\t{self.fname_profiles}\n\t{self.fname_spatial})\n\n"
+
+        txt += "IMPORTANT METHODS: \n"
+        txt += "    ...data\n"
+        txt += "    ...centroids\n"
+        txt += "    ...spatial_flat\n"
+        txt += "    ...spatial_mapped\n"
 
         txt += "\nDATA VARIABLES: "
         txt += str(tuple(self.data.sizes.keys())) + "\n"
@@ -259,6 +270,11 @@ class CryoGrid_TopoSub:
         for key in self.data.data_vars:
             placeholder = f"{{key:>{max_key_len}}}".format(key=key)
             txt += f"{placeholder} - {self.data[key].shape}\n"
+
+        txt += "\nEXAMPLE USAGE: \n"
+        txt += "    da_flat_1d = cg_run.data.T.sel(time='2015').mean('time').sel(depth=-2, method='nearest')\n"
+        txt += "    da_mapp_2d = cg_run.get_mapped(da_flat_1d)\n"
+        txt += "    da_mapp_2d.plot(size=10, aspect=2, cmap='Spectral_r')\n"
         
         return txt
     
@@ -294,6 +310,19 @@ class CryoGrid_TopoSub:
         return da
     
     def get_extent(self, pad=0):
+        """
+        Get the bounding box of the spatial data
+
+        Parameters
+        ----------
+        pad : int, optional
+            The padding to add to the bounding box, by default 0
+
+        Returns
+        -------
+        np.array
+            The bounding box in the format [w, s, e, n]
+        """
         import numpy as np
 
         ds = self.spatial_mapped
@@ -306,3 +335,44 @@ class CryoGrid_TopoSub:
 
         return bbox
     
+
+def convert_1D_to_2D_map(ds_1D: xr.Dataset, reference_grid=None, x_name='coord_x', y_name='coord_y'):
+    """
+    Convert a 1D map to a 2D map with coordinates
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        The dataset with 1D arrays - must contain the x and y coordinates either 
+        as data variables or as coordinates.
+    x_name : str, optional
+        The name of the x coordinate, by default 'coord_x'
+    y_name : str, optional
+        The name of the y coordinate, by default 'coord_y'
+
+    Returns
+    -------
+    xr.Dataset
+        The dataset with the 2D map
+    """
+    import numpy as np
+
+    assert x_name in ds_1D, f"Missing x coordinate: {x_name}"
+    assert y_name in ds_1D, f"Missing y coordinate: {y_name}"
+
+    ds_2D = (
+        ds_1D
+        .to_dataframe()
+        .set_index([y_name, x_name])
+        .to_xarray()
+        .rename(**{x_name: 'x', y_name: 'y'}))
+    
+    if reference_grid is not None:
+        ref = reference_grid.rio.set_nodata(np.nan)
+
+        ds_2D = (
+            ds_2D
+            .rio.write_crs(ref.rio.crs)
+        )
+
+    return ds_2D
